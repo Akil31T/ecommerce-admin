@@ -5,7 +5,7 @@ import { PRODUCT_API } from "./constant";
 const api = axios.create({
   baseURL:'https://ecommerce-api-nine-gilt.vercel.app/api',
   headers: {
-    "Content-Type": "application/json",
+    "Content-Type": "application/json ",
   },
 });
 

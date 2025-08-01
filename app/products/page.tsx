@@ -11,9 +11,9 @@ import z from "zod"
 import { productValidationSchema } from "../validationschema"
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ErrorMessage } from "@hookform/error-message"
 import api from "@/lib/api"
 import Image from "next/image"
+import { ErrorMessage } from "@/components/ErrorMessage"
 
 type ProductFormData = z.infer<typeof productValidationSchema>;
 
@@ -49,24 +49,48 @@ export default function ProductsPage() {
     fetchProducts()
   }, [])
   const onSubmit = async (data: ProductFormData) => {
+    const formData = new FormData();
 
-    const productData = {
-      ...data,
-      price: parseFloat(data.price.toString()),
-      stock: parseInt(data.stock.toString(), 10),
+    formData.append("name", data.name);
+    formData.append("description", data.description);
+    formData.append("price", String(data.price)); // Zod has already transformed it
+    formData.append("stock", String(data.stock));
+    formData.append("category", data.category);
+    formData.append("status", data.status);
+
+    if (data.image?.[0]) {
+      formData.append("image", data.image[0]); // image is a FileList
     }
-    const response = await api.post("/products", productData);
-    console.log("Form data:", response);
-    return response.data;
+
+    data.tags?.forEach(tag => {
+      formData.append("tags[]", tag);
+    });
+
+    const bodyData = {
+  name: data.name,
+  description: data.description,
+  price: data.price, // if still using string (not recommended)
+  // stock: data.inventory?.quantity, // or just quantity
+  // inStock: data.inventory.inStock,
+  category: data.category,
+  status: "active", // or infer from data if available
+  image: "", // default or load from elsewhere
+    };
+    const response = await api.post("/products", bodyData);
+
+    console.log("Product created:", response.data);
   };
+
+
+
   const handleEdit = (product: Product) => {
     setEditingProduct(product)
     setFormData({
       name: product.name,
       description: product.description,
-      price: product.price,
+      price: Number(product.price),
       category: product.category,
-      stock: product.stock,
+      stock: Number(product.stock),
       status: product.status,
     })
     setShowModal(true)
@@ -141,8 +165,8 @@ export default function ProductsPage() {
                     </div>
                     <p className="text-sm text-gray-600 mb-2 line-clamp-2">{product.description}</p>
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-lg font-bold text-gray-900">${product.price.toFixed(2)}</span>
-                      <span className="text-sm text-gray-500">Stock: {product.stock}</span>
+                      <span className="text-lg font-bold text-gray-900">${Number(product.price).toFixed(2)}</span>
+                      <span className="text-sm text-gray-500">Stock: {typeof product.stock === "object" ? product.stock.quantity : product.stock}</span>
                     </div>
                     <p className="text-xs text-gray-500 mb-4">{product.category}</p>
                     <div className="flex justify-between">
@@ -166,8 +190,11 @@ export default function ProductsPage() {
                     {editingProduct ? "Edit Product" : "Add New Product"}
                   </h2>
                   <form onSubmit={handleSubmit(onSubmit)}>
-                    <input type="file" {...register("image")} />
-
+                    <input
+                      type="file"
+                      accept="image/*"
+                      {...register("image")}
+                    />
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
                       <input
@@ -175,7 +202,7 @@ export default function ProductsPage() {
                         {...register("name")}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
-                      <ErrorMessage errors={errors} name="name" />
+                      <ErrorMessage>{errors.name?.message}</ErrorMessage>
                     </div>
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
@@ -185,19 +212,18 @@ export default function ProductsPage() {
                         {...register("description")}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
-                      <ErrorMessage errors={errors} name="description" />
-
+                      <ErrorMessage>{errors.description?.message}</ErrorMessage>
                     </div>
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Price</label>
                       <input
-                        type="number"
-                        step="0.01"
+                        type="text"
+
                         required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         {...register("price")}
                       />
-                      <ErrorMessage errors={errors} name="price" />
+                      <ErrorMessage>{errors.price?.message}</ErrorMessage>
 
                     </div>
                     <div className="mb-4">
@@ -208,18 +234,20 @@ export default function ProductsPage() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         {...register("category")}
                       />
-                      <ErrorMessage errors={errors} name="category" />
+                      <ErrorMessage>{errors.category?.message}</ErrorMessage>
+
 
                     </div>
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Stock</label>
                       <input
-                        type="number"
+                        type="text"
                         required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         {...register("stock")}
                       />
-                      <ErrorMessage errors={errors} name="stock" />
+                      <ErrorMessage>{errors.stock?.message}</ErrorMessage>
+
 
                     </div>
                     <div className="mb-6">
@@ -231,7 +259,7 @@ export default function ProductsPage() {
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
                       </select>
-                      <ErrorMessage errors={errors} name="status" />
+                      <ErrorMessage>{errors.status?.message}</ErrorMessage>
 
                     </div>
                     <div className="flex justify-end space-x-3">

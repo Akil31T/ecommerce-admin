@@ -1,10 +1,13 @@
 export interface Product {
-  id: string
-  name: string
-  description: string
-  price: number
-  category: string
-  stock: number
-  status: "active" | "inactive"
-  image: string
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  stock: {
+    quantity: number;
+    inStock: boolean;
+  };
+  category: string;
+  status: "active" | "inactive";
+  image: string;
 }
