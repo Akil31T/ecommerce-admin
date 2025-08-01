@@ -69,15 +69,14 @@ export default function ProductsPage() {
     setShowModal(true)
   }
 
-  const handleDelete = async (product: any) => {
+  const handleDelete = async (_id: string) => {
     if (confirm("Are you sure you want to delete this product?")) {
-      const response = await api.delete(`/products/${product._id}`);
+      const response = await api.delete(`/products/${_id}`);
       alert("Product deleted successfully");
       fetchProducts(); // Refresh the product list after deletion
       return response.data;
-      // setProducts(products.filter((product) => product.id !== id))
     }
-  }
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -135,7 +134,7 @@ export default function ProductsPage() {
                       <button onClick={() => handleEdit(product)} className="text-blue-600 hover:text-blue-900">
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDelete(product)} className="text-red-600 hover:text-red-900">
+                      <button onClick={() => handleDelete(String(product?._id))} className="text-red-600 hover:text-red-900">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>

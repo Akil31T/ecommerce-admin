@@ -9,7 +9,9 @@ export interface TVariant {
 }
 
 export interface Product {
- name: string;
+  name: string;
+  _id: string;
+
   // image?: string;
   description?: string;
   price: string; // to be converted to number before submission
@@ -18,4 +20,4 @@ export interface Product {
   variants: TVariant[];
   quantity: string; // to be converted to number
   inStock: boolean;
-  };    
+};    
