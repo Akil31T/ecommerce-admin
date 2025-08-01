@@ -8,6 +8,7 @@ export const productValidationSchema = z.object({
   stock: z
     .string()
     .optional(),
+  inStock: z.boolean().optional(),
   category: z.string().min(1, "Category is required"),
   status: z.enum(["active", "inactive"]),
   tags: z
