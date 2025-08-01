@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import Sidebar from "@/components/sidebar"
 import Header from "@/components/header"
-import { Plus, Edit2, Trash2 } from "lucide-react"
+import { Plus, Edit2 } from "lucide-react"
 import { Product } from "@/lib/types"
 import z from "zod"
 import { productValidationSchema } from "../validationschema"
@@ -21,14 +21,7 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>()
   const [showModal, setShowModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    price: 0,
-    category: "",
-    stock: 0,
-    status: "active" as "active" | "inactive",
-  })
+
 
   const {
     register,
@@ -49,33 +42,20 @@ export default function ProductsPage() {
     fetchProducts()
   }, [])
   const onSubmit = async (data: ProductFormData) => {
-    const formData = new FormData();
-
-    formData.append("name", data.name);
-    formData.append("description", data.description);
-    formData.append("price", String(data.price)); // Zod has already transformed it
-    formData.append("stock", String(data.stock));
-    formData.append("category", data.category);
-    formData.append("status", data.status);
-
-    if (data.image?.[0]) {
-      formData.append("image", data.image[0]); // image is a FileList
-    }
-
-    data.tags?.forEach(tag => {
-      formData.append("tags[]", tag);
-    });
-
-    const bodyData = {
-  name: data.name,
-  description: data.description,
-  price: data.price, // if still using string (not recommended)
-  // stock: data.inventory?.quantity, // or just quantity
-  // inStock: data.inventory.inStock,
-  category: data.category,
-  status: "active", // or infer from data if available
-  image: "", // default or load from elsewhere
-    };
+   const bodyData = {
+    name: data.name,
+    description: data.description,
+    price: Number(data.price), // convert to number
+    category: data.category,
+    tags: [],
+    variants: [], 
+    inventory: {
+      quantity: Number(data.stock),
+      inStock: data.stock ? true : false, 
+    },
+    status: "active",
+    image: data.image || "", // fallback to empty string
+  };
     const response = await api.post("/products", bodyData);
 
     console.log("Product created:", response.data);
@@ -85,39 +65,32 @@ export default function ProductsPage() {
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product)
-    setFormData({
-      name: product.name,
-      description: product.description,
-      price: Number(product.price),
-      category: product.category,
-      stock: Number(product.stock),
-      status: product.status,
-    })
+   
     setShowModal(true)
   }
 
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this product?")) {
-      fetch(`${process.env.BASE_URL}/api/products/${id}`, {
-        method: "DELETE",
-      })
-        .then((res) => {
-          if (!res.ok) {
-            throw new Error("Failed to delete product")
-          }
-          return res.json()
-        })
-        .then(() => {
-          setProducts(products?.filter((product) => product.id !== id))
-          alert("Product deleted successfully")
-        })
-        .catch((error) => {
-          console.error("Error deleting product:", error)
-          alert("Failed to delete product")
-        })
-      // setProducts(products.filter((product) => product.id !== id))
-    }
-  }
+  // const handleDelete = (id: string) => {
+  //   if (confirm("Are you sure you want to delete this product?")) {
+  //     fetch(`${process.env.BASE_URL}/api/products/${id}`, {
+  //       method: "DELETE",
+  //     })
+  //       .then((res) => {
+  //         if (!res.ok) {
+  //           throw new Error("Failed to delete product")
+  //         }
+  //         return res.json()
+  //       })
+  //       .then(() => {
+  //         // setProducts(products?.filter((product) => product._id !== id))
+  //         alert("Product deleted successfully")
+  //       })
+  //       .catch((error) => {
+  //         console.error("Error deleting product:", error)
+  //         alert("Failed to delete product")
+  //       })
+  //     // setProducts(products.filter((product) => product.id !== id))
+  //   }
+  // }
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -156,26 +129,28 @@ export default function ProductsPage() {
                   <div className="p-4">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="text-lg font-semibold text-gray-900 truncate">{product.name}</h3>
-                      <span
+                      {/* <span
                         className={`px-2 py-1 text-xs rounded-full ${product.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
                           }`}
                       >
                         {product.status}
-                      </span>
+                      </span> */}
                     </div>
                     <p className="text-sm text-gray-600 mb-2 line-clamp-2">{product.description}</p>
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-lg font-bold text-gray-900">${Number(product.price).toFixed(2)}</span>
-                      <span className="text-sm text-gray-500">Stock: {typeof product.stock === "object" ? product.stock.quantity : product.stock}</span>
+                      <span className="text-sm text-gray-500">
+                        Stock: {product.quantity} {product.inStock ? "(In Stock)" : "(Out of Stock)"}
+                      </span>
                     </div>
                     <p className="text-xs text-gray-500 mb-4">{product.category}</p>
                     <div className="flex justify-between">
                       <button onClick={() => handleEdit(product)} className="text-blue-600 hover:text-blue-900">
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDelete(product.id)} className="text-red-600 hover:text-red-900">
+                      {/* <button onClick={() => handleDelete(product._id)} className="text-red-600 hover:text-red-900">
                         <Trash2 className="w-4 h-4" />
-                      </button>
+                      </button> */}
                     </div>
                   </div>
                 </div>
@@ -268,7 +243,6 @@ export default function ProductsPage() {
                         onClick={() => {
                           setShowModal(false)
                           setEditingProduct(null)
-                          setFormData({ name: "", description: "", price: 0, category: "", stock: 0, status: "active" })
                         }}
                         className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                       >
