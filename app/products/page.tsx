@@ -57,7 +57,8 @@ export default function ProductsPage() {
       // image: data.image || "", // fallback to empty string
     };
     const response = await api.post("/products", bodyData);
-
+    fetchProducts();
+    setShowModal(false);
     console.log("Product created:", response.data);
   };
 
