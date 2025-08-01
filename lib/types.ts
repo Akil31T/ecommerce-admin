@@ -10,7 +10,7 @@ export interface TVariant {
 
 export interface Product {
  name: string;
-  image?: string;
+  // image?: string;
   description?: string;
   price: string; // to be converted to number before submission
   category: string;
