@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import Sidebar from "@/components/sidebar"
 import Header from "@/components/header"
-import { Plus, Edit2 } from "lucide-react"
+import { Plus, Edit2, Trash2 } from "lucide-react"
 import { Product } from "@/lib/types"
 import z from "zod"
 import { productValidationSchema } from "../validationschema"
@@ -42,20 +42,20 @@ export default function ProductsPage() {
     fetchProducts()
   }, [])
   const onSubmit = async (data: ProductFormData) => {
-   const bodyData = {
-    name: data.name,
-    description: data.description,
-    price: Number(data.price), // convert to number
-    category: data.category,
-    tags: [],
-    variants: [], 
-    inventory: {
-      quantity: Number(data.stock),
-      inStock: data.stock ? true : false, 
-    },
-    status: "active",
-    image: data.image || "", // fallback to empty string
-  };
+    const bodyData = {
+      name: data.name,
+      description: data.description,
+      price: Number(data.price), // convert to number
+      category: data.category,
+      tags: [],
+      variants: [],
+      inventory: {
+        quantity: Number(data.stock),
+        inStock: data.stock ? true : false,
+      },
+      status: "active",
+      // image: data.image || "", // fallback to empty string
+    };
     const response = await api.post("/products", bodyData);
 
     console.log("Product created:", response.data);
@@ -65,32 +65,19 @@ export default function ProductsPage() {
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product)
-   
+
     setShowModal(true)
   }
 
-  // const handleDelete = (id: string) => {
-  //   if (confirm("Are you sure you want to delete this product?")) {
-  //     fetch(`${process.env.BASE_URL}/api/products/${id}`, {
-  //       method: "DELETE",
-  //     })
-  //       .then((res) => {
-  //         if (!res.ok) {
-  //           throw new Error("Failed to delete product")
-  //         }
-  //         return res.json()
-  //       })
-  //       .then(() => {
-  //         // setProducts(products?.filter((product) => product._id !== id))
-  //         alert("Product deleted successfully")
-  //       })
-  //       .catch((error) => {
-  //         console.error("Error deleting product:", error)
-  //         alert("Failed to delete product")
-  //       })
-  //     // setProducts(products.filter((product) => product.id !== id))
-  //   }
-  // }
+  const handleDelete = async (product: any) => {
+    if (confirm("Are you sure you want to delete this product?")) {
+      const response = await api.delete(`/products/${product._id}`);
+      alert("Product deleted successfully");
+      fetchProducts(); // Refresh the product list after deletion
+      return response.data;
+      // setProducts(products.filter((product) => product.id !== id))
+    }
+  }
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -119,13 +106,13 @@ export default function ProductsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {products?.map((product, index) => (
                 <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
-                  <Image
+                  {/* <Image
                     src={product.image || "/placeholder.svg"}
                     alt={product.name}
                     width={400}
                     height={300}
                     className="w-full h-48 object-cover rounded"
-                  />
+                  /> */}
                   <div className="p-4">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="text-lg font-semibold text-gray-900 truncate">{product.name}</h3>
@@ -148,9 +135,9 @@ export default function ProductsPage() {
                       <button onClick={() => handleEdit(product)} className="text-blue-600 hover:text-blue-900">
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      {/* <button onClick={() => handleDelete(product._id)} className="text-red-600 hover:text-red-900">
+                      <button onClick={() => handleDelete(product)} className="text-red-600 hover:text-red-900">
                         <Trash2 className="w-4 h-4" />
-                      </button> */}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -165,11 +152,11 @@ export default function ProductsPage() {
                     {editingProduct ? "Edit Product" : "Add New Product"}
                   </h2>
                   <form onSubmit={handleSubmit(onSubmit)}>
-                    <input
+                    {/* <input
                       type="file"
                       accept="image/*"
                       {...register("image")}
-                    />
+                    /> */}
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
                       <input
