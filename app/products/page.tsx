@@ -2,67 +2,23 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Sidebar from "@/components/sidebar"
 import Header from "@/components/header"
 import { Plus, Edit2, Trash2 } from "lucide-react"
+import { Product } from "@/lib/types"
+import z from "zod"
+import { productValidationSchema } from "../validationschema"
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ErrorMessage } from "@hookform/error-message"
+import api from "@/lib/api"
+import Image from "next/image"
 
-interface Product {
-  id: string
-  name: string
-  description: string
-  price: number
-  category: string
-  stock: number
-  status: "active" | "inactive"
-  image: string
-}
-
-const initialProducts: Product[] = [
-  {
-    id: "1",
-    name: "Wireless Headphones",
-    description: "High-quality wireless headphones",
-    price: 99.99,
-    category: "Electronics",
-    stock: 25,
-    status: "active",
-    image: "/placeholder.svg?height=60&width=60",
-  },
-  {
-    id: "2",
-    name: "Smartphone Case",
-    description: "Protective smartphone case",
-    price: 29.99,
-    category: "Accessories",
-    stock: 50,
-    status: "active",
-    image: "/placeholder.svg?height=60&width=60",
-  },
-  {
-    id: "3",
-    name: "Laptop",
-    description: "High-performance laptop",
-    price: 899.99,
-    category: "Electronics",
-    stock: 10,
-    status: "active",
-    image: "/placeholder.svg?height=60&width=60",
-  },
-  {
-    id: "4",
-    name: "Watch",
-    description: "Stylish wristwatch",
-    price: 199.99,
-    category: "Accessories",
-    stock: 0,
-    status: "inactive",
-    image: "/placeholder.svg?height=60&width=60",
-  },
-]
+type ProductFormData = z.infer<typeof productValidationSchema>;
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>(initialProducts)
+  const [products, setProducts] = useState<Product[]>()
   const [showModal, setShowModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [formData, setFormData] = useState({
@@ -74,31 +30,35 @@ export default function ProductsPage() {
     status: "active" as "active" | "inactive",
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ProductFormData>({
+    resolver: zodResolver(productValidationSchema),
+  });
 
-    if (editingProduct) {
-      setProducts(
-        products.map((product) =>
-          product.id === editingProduct.id
-            ? { ...product, ...formData, image: "/placeholder.svg?height=60&width=60" }
-            : product,
-        ),
-      )
-    } else {
-      const newProduct: Product = {
-        id: Date.now().toString(),
-        ...formData,
-        image: "/placeholder.svg?height=60&width=60",
-      }
-      setProducts([...products, newProduct])
-    }
-
-    setShowModal(false)
-    setEditingProduct(null)
-    setFormData({ name: "", description: "", price: 0, category: "", stock: 0, status: "active" })
+  const fetchProducts = async () => {
+    const response = await api.get("/products");
+    console.log("Fetched products:", response.data.data);
+    setProducts(response.data.data);
+    return response.data.data.data;
   }
 
+  useEffect(() => {
+    fetchProducts()
+  }, [])
+  const onSubmit = async (data: ProductFormData) => {
+
+    const productData = {
+      ...data,
+      price: parseFloat(data.price.toString()),
+      stock: parseInt(data.stock.toString(), 10),
+    }
+    const response = await api.post("/products", productData);
+    console.log("Form data:", response);
+    return response.data;
+  };
   const handleEdit = (product: Product) => {
     setEditingProduct(product)
     setFormData({
@@ -114,7 +74,24 @@ export default function ProductsPage() {
 
   const handleDelete = (id: string) => {
     if (confirm("Are you sure you want to delete this product?")) {
-      setProducts(products.filter((product) => product.id !== id))
+      fetch(`${process.env.BASE_URL}/api/products/${id}`, {
+        method: "DELETE",
+      })
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error("Failed to delete product")
+          }
+          return res.json()
+        })
+        .then(() => {
+          setProducts(products?.filter((product) => product.id !== id))
+          alert("Product deleted successfully")
+        })
+        .catch((error) => {
+          console.error("Error deleting product:", error)
+          alert("Failed to delete product")
+        })
+      // setProducts(products.filter((product) => product.id !== id))
     }
   }
 
@@ -143,20 +120,21 @@ export default function ProductsPage() {
 
             {/* Products Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {products.map((product) => (
-                <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-                  {/* <img
+              {products?.map((product, index) => (
+                <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
+                  <Image
                     src={product.image || "/placeholder.svg"}
                     alt={product.name}
-                    className="w-full h-48 object-cover"
-                  /> */}
+                    width={400}
+                    height={300}
+                    className="w-full h-48 object-cover rounded"
+                  />
                   <div className="p-4">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="text-lg font-semibold text-gray-900 truncate">{product.name}</h3>
                       <span
-                        className={`px-2 py-1 text-xs rounded-full ${
-                          product.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                        }`}
+                        className={`px-2 py-1 text-xs rounded-full ${product.status === "active" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                          }`}
                       >
                         {product.status}
                       </span>
@@ -187,26 +165,28 @@ export default function ProductsPage() {
                   <h2 className="text-lg font-medium text-gray-900 mb-4">
                     {editingProduct ? "Edit Product" : "Add New Product"}
                   </h2>
-                  <form onSubmit={handleSubmit}>
+                  <form onSubmit={handleSubmit(onSubmit)}>
+                    <input type="file" {...register("image")} />
+
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
                       <input
                         type="text"
-                        required
+                        {...register("name")}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       />
+                      <ErrorMessage errors={errors} name="name" />
                     </div>
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
                       <textarea
                         required
                         rows={3}
+                        {...register("description")}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       />
+                      <ErrorMessage errors={errors} name="description" />
+
                     </div>
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Price</label>
@@ -215,9 +195,10 @@ export default function ProductsPage() {
                         step="0.01"
                         required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={formData.price}
-                        onChange={(e) => setFormData({ ...formData, price: Number.parseFloat(e.target.value) })}
+                        {...register("price")}
                       />
+                      <ErrorMessage errors={errors} name="price" />
+
                     </div>
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
@@ -225,9 +206,10 @@ export default function ProductsPage() {
                         type="text"
                         required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        {...register("category")}
                       />
+                      <ErrorMessage errors={errors} name="category" />
+
                     </div>
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Stock</label>
@@ -235,20 +217,22 @@ export default function ProductsPage() {
                         type="number"
                         required
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={formData.stock}
-                        onChange={(e) => setFormData({ ...formData, stock: Number.parseInt(e.target.value) })}
+                        {...register("stock")}
                       />
+                      <ErrorMessage errors={errors} name="stock" />
+
                     </div>
                     <div className="mb-6">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                       <select
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={formData.status}
-                        onChange={(e) => setFormData({ ...formData, status: e.target.value as "active" | "inactive" })}
+                        {...register("status")}
                       >
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
                       </select>
+                      <ErrorMessage errors={errors} name="status" />
+
                     </div>
                     <div className="flex justify-end space-x-3">
                       <button
@@ -276,3 +260,5 @@ export default function ProductsPage() {
     </div>
   )
 }
+
+
