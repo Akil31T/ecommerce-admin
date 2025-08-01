@@ -12,7 +12,7 @@ import { productValidationSchema } from "../validationschema"
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import api from "@/lib/api"
-import Image from "next/image"
+// import Image from "next/image"
 import { ErrorMessage } from "@/components/ErrorMessage"
 
 type ProductFormData = z.infer<typeof productValidationSchema>;
