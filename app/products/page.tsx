@@ -11,9 +11,10 @@ import z from "zod"
 import { productValidationSchema } from "../validationschema"
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import api from "@/lib/api"
 // import Image from "next/image"
 import { ErrorMessage } from "@/components/ErrorMessage"
+import apiCall from "@/lib/api"
+import { API_ENDPOINT } from "@/lib/constant"
 
 type ProductFormData = z.infer<typeof productValidationSchema>;
 
@@ -32,10 +33,10 @@ export default function ProductsPage() {
   });
 
   const fetchProducts = async () => {
-    const response = await api.get("/products");
-    console.log("Fetched products:", response.data.data);
-    setProducts(response.data.data);
-    return response.data.data.data;
+    const response = await apiCall(API_ENDPOINT.newProducts, "GET");
+    console.log("Fetched products:", response);
+    setProducts(response?.data);
+    return response?.data;
   }
 
   useEffect(() => {
@@ -56,12 +57,20 @@ export default function ProductsPage() {
       status: "active",
       // image: data.image || "", // fallback to empty string
     };
-    const response = await api.post("/products", bodyData);
+    const response = await apiCall(API_ENDPOINT.newProducts, "POST", bodyData);
     fetchProducts();
     setShowModal(false);
     console.log("Product created:", response.data);
   };
+  const [file, setFile] = useState();
+  const uploadImage = async (file: File) => {
+    const formData = new FormData();
+    formData.append("image", file);
 
+    const res = await apiCall(API_ENDPOINT.PRODUCTIMAGE, "POST", formData);
+    setFile(res);
+    return res;
+  };
 
 
   const handleEdit = (product: Product) => {
@@ -72,7 +81,8 @@ export default function ProductsPage() {
 
   const handleDelete = async (_id: string) => {
     if (confirm("Are you sure you want to delete this product?")) {
-      const response = await api.delete(`/products/${_id}`);
+      const response = await apiCall(API_ENDPOINT.newProducts, "DELETE", { _id });
+      // api.delete(`/products/${_id}`);
       alert("Product deleted successfully");
       fetchProducts(); // Refresh the product list after deletion
       return response.data;
@@ -152,11 +162,22 @@ export default function ProductsPage() {
                     {editingProduct ? "Edit Product" : "Add New Product"}
                   </h2>
                   <form onSubmit={handleSubmit(onSubmit)}>
-                    {/* <input
-                      type="file"
-                      accept="image/*"
-                      {...register("image")}
-                    /> */}
+                    <form onSubmit={handleSubmit(onSubmit)}>
+                      <input
+                        type="file"
+                        accept="image/*"
+                      // {...register("")}
+                      />
+
+                      <button type="submit" onClick={() => {
+                        if (file) {
+                          uploadImage(file);
+                        } else {
+                          console.warn("No file selected.");
+                        }
+                      }}>Submit</button>
+                    </form>
+
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
                       <input

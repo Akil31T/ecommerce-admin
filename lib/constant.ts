@@ -1,7 +1,8 @@
 // export const API_ENDPOINT = process.env.BASE_URL || "https://ecommerce-api-nine-gilt.vercel.app/api";
 
-export const PRODUCT_API = process.env.BASE_URL;
+export const PRODUCT_API = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export const API_ENDPOINT ={
-    newProducts: `/products`,
+    newProducts: '/products',
+    PRODUCTIMAGE: `/api/upload`,
 }
