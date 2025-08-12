@@ -18,6 +18,7 @@ export interface Product {
   category: string;
   tags: string[]; // usually strings entered via tag input
   variants: TVariant[];
+  inventory: TInventory;
   quantity: string; // to be converted to number
   inStock: boolean;
 };    

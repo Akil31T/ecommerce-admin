@@ -15,6 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ErrorMessage } from "@/components/ErrorMessage"
 import apiCall from "@/lib/api"
 import { API_ENDPOINT } from "@/lib/constant"
+import Swal from "sweetalert2"
 
 type ProductFormData = z.infer<typeof productValidationSchema>;
 
@@ -28,6 +29,7 @@ export default function ProductsPage() {
     register,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm<ProductFormData>({
     resolver: zodResolver(productValidationSchema),
   });
@@ -57,35 +59,80 @@ export default function ProductsPage() {
       status: "active",
       // image: data.image || "", // fallback to empty string
     };
-    const response = await apiCall(API_ENDPOINT.newProducts, "POST", bodyData);
-    fetchProducts();
-    setShowModal(false);
-    console.log("Product created:", response.data);
+    try {
+      if (editingProduct) {
+        await apiCall(`${API_ENDPOINT.newProducts}/${editingProduct._id}`, "PUT", bodyData);
+        Swal.fire({ title: "Updated!", text: "Product updated successfully.", icon: "success" });
+      } else {
+        await apiCall(API_ENDPOINT.newProducts, "POST", bodyData);
+        Swal.fire({ title: "Added!", text: "Product created successfully.", icon: "success" });
+      }
+
+      fetchProducts();
+      setShowModal(false);
+      setEditingProduct(null);
+      reset();
+    } catch (error) {
+      Swal.fire({ icon: "error", title: "Oops...", text: "Something went wrong!" });
+    }
   };
-  const [file, setFile] = useState();
+  const [file, setFile] = useState<File | null>(null);
+
   const uploadImage = async (file: File) => {
     const formData = new FormData();
-    formData.append("image", file);
+    console.log("Uploading file:", file);
+
+    formData.append("image", file?.name);
 
     const res = await apiCall(API_ENDPOINT.PRODUCTIMAGE, "POST", formData);
-    setFile(res);
+    setFile(null); // Clear the selected file after upload (optional)
     return res;
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      uploadImage(selectedFile);
+    } else {
+      console.log("No file selected.");
+    }
+  };
+
+
 
   const handleEdit = (product: Product) => {
-    setEditingProduct(product)
+    setEditingProduct(product);
+    setShowModal(true);
 
-    setShowModal(true)
-  }
+    // Prefill form values
+    reset({
+      name: product.name,
+      description: product.description,
+      price: String(product.price),
+      category: product.category,
+      stock: String(product.inventory.quantity || 0),
+      status: "active",
+    });
+  };
 
   const handleDelete = async (_id: string) => {
-    if (confirm("Are you sure you want to delete this product?")) {
-      const response = await apiCall(API_ENDPOINT.newProducts, "DELETE", { _id });
-      // api.delete(`/products/${_id}`);
-      alert("Product deleted successfully");
-      fetchProducts(); // Refresh the product list after deletion
-      return response.data;
+    try {
+      await apiCall(API_ENDPOINT.newProducts, "DELETE", { _id });
+      fetchProducts();
+      Swal.fire({
+        title: "Deleted!",
+        text: "Your product has been deleted.",
+        icon: "success"
+      });
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Something went wrong while deleting the product!",
+        footer: '<a href="#">Why do I have this issue?</a>'
+      });
     }
   };
 
@@ -145,7 +192,7 @@ export default function ProductsPage() {
                       <button onClick={() => handleEdit(product)} className="text-blue-600 hover:text-blue-900">
                         <Edit2 className="w-4 h-4" />
                       </button>
-                      <button onClick={() => handleDelete(String(product?._id))} className="text-red-600 hover:text-red-900">
+                      <button onClick={() => handleDelete(product?._id)} className="text-red-600 hover:text-red-900">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -162,21 +209,19 @@ export default function ProductsPage() {
                     {editingProduct ? "Edit Product" : "Add New Product"}
                   </h2>
                   <form onSubmit={handleSubmit(onSubmit)}>
-                    <form onSubmit={handleSubmit(onSubmit)}>
-                      <input
-                        type="file"
-                        accept="image/*"
-                      // {...register("")}
-                      />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                    />
 
-                      <button type="submit" onClick={() => {
-                        if (file) {
-                          uploadImage(file);
-                        } else {
-                          console.warn("No file selected.");
-                        }
-                      }}>Submit</button>
-                    </form>
+                    <button type="submit" onClick={() => {
+                      if (file) {
+                        uploadImage(file);
+                      } else {
+                        console.log("No file selected.");
+                      }
+                    }}>Submit</button>
 
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>

@@ -4,5 +4,5 @@ export const PRODUCT_API = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export const API_ENDPOINT ={
     newProducts: '/products',
-    PRODUCTIMAGE: `/api/upload`,
+    PRODUCTIMAGE: `/upload`,
 }
