@@ -73,6 +73,7 @@ export default function ProductsPage() {
       setEditingProduct(null);
       reset();
     } catch (error) {
+      console.error("Error submitting product:", error);
       Swal.fire({ icon: "error", title: "Oops...", text: "Something went wrong!" });
     }
   };
