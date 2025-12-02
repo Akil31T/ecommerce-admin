@@ -1,17 +1,14 @@
 // utils/api.ts
 import axios, { Method } from "axios";
+import { PRODUCT_API } from "../lib/constant";
 
 const api = axios.create({
-  baseURL: 'https://ecommerce-api-nine-gilt.vercel.app/api',
-  headers: {
-    "Content-Type": "application/json ",
-  },
+  baseURL: PRODUCT_API,
 });
 
 
 api.interceptors.response.use(
   (response) => {
-    // Handle successful responses  
     return response;
   }
   , (error) => {
@@ -29,17 +26,41 @@ api.interceptors.response.use(
 
 // utils/api.ts
 
+// const apiCall = async <T = unknown>(
+//   endpoint: string,
+//   method: Method,
+//   data?: T
+// ) => {
+//   try {
+//     const response = await api({
+//       url: endpoint,
+//       method,
+//       data,
+//     });
+//     return response.data;
+//   } catch (error) {
+//     console.error("API call error:", error);
+//     throw error;
+//   }
+// };
+
 const apiCall = async <T = unknown>(
   endpoint: string,
   method: Method,
   data?: T
 ) => {
   try {
+    const isFormData = data instanceof FormData;
+
     const response = await api({
       url: endpoint,
       method,
       data,
+      headers: isFormData
+        ? { "Content-Type": "multipart/form-data" }
+        : { "Content-Type": "application/json" },
     });
+
     return response.data;
   } catch (error) {
     console.error("API call error:", error);

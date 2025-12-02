@@ -12,7 +12,7 @@ export interface Product {
   name: string;
   _id: string;
 
-  // image?: string;
+  image?: string;
   description?: string;
   price: string; // to be converted to number before submission
   category: string;
