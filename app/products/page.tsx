@@ -43,60 +43,7 @@ export default function ProductsPage() {
   useEffect(() => {
     fetchProducts();
   }, []);
-  const [file, setFile] = useState<File | null>(null);
 
-
-  // const onSubmit = async (data: ProductFormData) => {
-  //   const bodyData = {
-  //     name: data.name,
-  //     description: data.description,
-  //     price: Number(data.price), // convert to number
-  //     category: data.category,
-  //     image: data.image ? URL.createObjectURL(data.image) : "",
-  //     tags: [],
-  //     variants: [],
-  //     inventory: {
-  //       quantity: Number(data.stock),
-  //       inStock: data.stock ? true : false,
-  //     },
-  //     status: "active",
-  //     // image: data.image || "", // fallback to empty string
-  //   };
-  //   try {
-  //     if (editingProduct) {
-  //       await apiCall(
-  //         `${API_ENDPOINT.newProducts}/${editingProduct._id}`,
-  //         "PUT",
-  //         bodyData
-  //       );
-  //       uploadImage(data.image)
-  //       Swal.fire({
-  //         title: "Updated!",
-  //         text: "Product updated successfully.",
-  //         icon: "success",
-  //       });
-  //     } else {
-  //       await apiCall(API_ENDPOINT.newProducts, "POST", bodyData);
-  //       Swal.fire({
-  //         title: "Added!",
-  //         text: "Product created successfully.",
-  //         icon: "success",
-  //       });
-  //     }
-
-  //     fetchProducts();
-  //     setShowModal(false);
-  //     setEditingProduct(null);
-  //     reset();
-  //   } catch (error) {
-  //     console.error("Error submitting product:", error);
-  //     Swal.fire({
-  //       icon: "error",
-  //       title: "Oops...",
-  //       text: "Something went wrong!",
-  //     });
-  //   }
-  // };
 
   const onSubmit = async (data: ProductFormData) => {
     const formData = new FormData();
@@ -143,14 +90,6 @@ export default function ProductsPage() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-    } else {
-      console.log("No file selected.");
-    }
-  };
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
@@ -286,26 +225,8 @@ export default function ProductsPage() {
                       type="file"
                       accept="image/*"
                       {...register("image")}
-                      onChange={handleFileChange}
                     />
-                    {/* <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                    /> */}
-
-                    {/* <button
-                      type="submit"
-                      onClick={() => {
-                        if (file) {
-                          uploadImage(file);
-                        } else {
-                          console.log("No file selected.");
-                        }
-                      }}
-                    >
-                      Submit
-                    </button> */}
+                   
 
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
