@@ -12,7 +12,7 @@ import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
 import { Plus, Edit2, Trash2 } from "lucide-react";
 import { Product } from "@/lib/types";
-import z, { set } from "zod";
+import z from "zod";
 import { productValidationSchema } from "../validationschema";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
