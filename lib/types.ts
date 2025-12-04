@@ -11,8 +11,9 @@ export interface TVariant {
 export interface Product {
   name: string;
   _id: string;
-
   image?: string;
+  status?: string;
+  stock?: number;
   description?: string;
   price: string; // to be converted to number before submission
   category: string;
