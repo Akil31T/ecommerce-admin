@@ -14,7 +14,8 @@ export const productValidationSchema = z.object({
   tags: z
     .array(z.string().min(1, "Tag cannot be empty"))
     .optional(),
-  image: z
-    .any()
-    .refine((file) => file?.length === 1, "Image is required"),
+      image: z.any().optional(),
+  // image: z
+  //   .any()
+  //   .refine((file) => file?.length === 1, "Image is required"),
 });
