@@ -121,26 +121,25 @@ export default function ProductsPage() {
   };
 
   const handleEdit = async (product: Product) => {
+    try {
+      setEditingProduct(product);
+      setShowModal(true);
+      setPreview(product.image || "");
+      await apiCall(`${API_ENDPOINT.newProducts}/${product._id}`, "GET");
 
-    try{
-    setEditingProduct(product);
-    setShowModal(true);
-    setPreview(product.image || "");
-    await apiCall(`${API_ENDPOINT.newProducts}/${product._id}`, "GET");
+      setValue("name", product.name);
+      setValue("description", product.description || "");
+      setValue("price", String(product.price));
+      setValue("category", product.category);
+      setValue("stock", String(product.inventory?.quantity || 0));
+      const statusValue =
+        product.status === "active" || product.status === "inactive"
+          ? product.status
+          : "active";
 
-    setValue("name", product.name);
-    setValue("description", product.description || "");
-    setValue("price", String(product.price));
-    setValue("category", product.category);
-    setValue("stock", String(product.inventory?.quantity || 0));
-    const statusValue =
-      product.status === "active" || product.status === "inactive"
-        ? product.status
-        : "active";
-
-    setValue("status", statusValue);
-    }catch(err){
-      console.log("Error in handle edit:",err);
+      setValue("status", statusValue);
+    } catch (err) {
+      console.log("Error in handle edit:", err);
     }
   };
 
@@ -233,7 +232,8 @@ export default function ProductsPage() {
                         ${Number(product.price).toFixed(2)}
                       </span>
                       <span className="text-sm text-gray-500">
-                        Stock: {product.stock}{" "}
+                        Stock:{" "}
+                        {product.stock === 0 || ''? "Out of Stock" : product.stock}{" "}
                         {/* {product.inStock ? "(In Stock)" : "(Out of Stock)"} */}
                       </span>
                     </div>
